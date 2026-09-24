@@ -1,1 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Salary & Overtime Take-Home Calculator</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-hover: #1e40af;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+        }
+        h1 { margin-top: 0; color: var(--primary); font-size: 1.75rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        input, select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .results {
+            margin-top: 32px;
+            border-top: 2px solid var(--border);
+            padding-top: 24px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        th { background-color: #f1f5f9; }
+        .highlight { font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h1>UK Take-Home & Overtime Calculator</h1>
+    
+    <div class="grid">
+        <div class="form-group">
+            <label for="salary">Annual Salary (£)</label>
+            <input type="number" id="salary" value="44598">
+        </div>
+        <div class="form-group">
+            <label for="hoursPerWeek">Contracted Weekly Hours</label>
+            <input type="number" id="hoursPerWeek" value="37.5" step="0.5">
+        </div>
+        <div class="form-group">
+            <label for="pension">Pension Contribution (%)</label>
+            <input type="number" id="pension" value="7" step="0.5">
+        </div>
+        <div class="form-group">
+            <label for="shareScheme">Share Scheme / Month (£)</label>
+            <input type="number" id="shareScheme" value="75">
+        </div>
+        <div class="form-group">
+            <label for="unionFee">Union Fee / Month (£)</label>
+            <input type="number" id="unionFee" value="19">
+        </div>
+        <div class="form-group">
+            <label for="studentLoan">Student Loan</label>
+            <select id="studentLoan">
+                <option value="none">None</option>
+                <option value="plan1">Plan 1</option>
+                <option value="plan2" selected>Plan 2</option>
+                <option value="plan5">Plan 5</option>
+                <option value="postgrad">Postgraduate</option>
+            </select>
+        </div>
+    </div>
+
+    <h3>Overtime & Bonus Earnings (This Month)</h3>
+    <div class="grid">
+        <div class="form-group">
+            <label for="ot15">Overtime Hours @ 1.5x</label>
+            <input type="number" id="ot15" value="1" step="0.5">
+        </div>
+        <div class="form-group">
+            <label for="ot175">Overtime Hours @ 1.75x</label>
+            <input type="number" id="ot175" value="19" step="0.5">
+        </div>
+        <div class="form-group">
+            <label for="bonusPct">Bonus (% of Annual Salary)</label>
+            <input type="number" id="bonusPct" value="0" step="0.1">
+        </div>
+    </div>
+
+    <button onclick="calculatePay()">Calculate Take-Home Pay</button>
+
+    <div class="results" id="resultsBlock" style="display:none;">
+        <h3>Monthly Take-Home Summary</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Base Month</th>
+                    <th>With Overtime/Bonus</th>
+                    <th>Difference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Gross Pay</td><td id="baseGross"></td><td id="totalGross"></td><td id="diffGross"></td></tr>
+                <tr><td>Pension Contribution</td><td id="basePension"></td><td id="totalPension"></td><td id="diffPension"></td></tr>
+                <tr><td>Income Tax</td><td id="baseTax"></td><td id="totalTax"></td><td id="diffTax"></td></tr>
+                <tr><td>National Insurance</td><td id="baseNI"></td><td id="totalNI"></td><td id="diffNI"></td></tr>
+                <tr><td>Student Loan</td><td id="baseSL"></td><td id="totalSL"></td><td id="diffSL"></td></tr>
+                <tr><td>Share Scheme & Union</td><td id="baseOther"></td><td id="totalOther"></td><td id="diffOther"></td></tr>
+                <tr class="highlight"><td>Net Take-Home Pay</td><td id="baseNet"></td><td id="totalNet"></td><td id="diffNet"></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function calculatePay() {
+    const annualSalary = parseFloat(document.getElementById('salary').value) || 0;
+    const weeklyHours = parseFloat(document.getElementById('hoursPerWeek').value) || 37.5;
+    const pensionPct = (parseFloat(document.getElementById('pension').value) || 0) / 100;
+    const shareScheme = parseFloat(document.getElementById('shareScheme').value) || 0;
+    const unionFee = parseFloat(document.getElementById('unionFee').value) || 0;
+    const studentLoan = document.getElementById('studentLoan').value;
+
+    const ot15 = parseFloat(document.getElementById('ot15').value) || 0;
+    const ot175 = parseFloat(document.getElementById('ot175').value) || 0;
+    const bonusPct = (parseFloat(document.getElementById('bonusPct').value) || 0) / 100;
+
+    const hourlyRate = annualSalary / (weeklyHours * 52);
+    const otGross = (ot15 * 1.5 + ot175 * 1.75) * hourlyRate;
+    const bonusGross = annualSalary * bonusPct;
+    const extraGross = otGross + bonusGross;
+
+    const monthlyBaseGross = annualSalary / 12;
+    const monthlyTotalGross = monthlyBaseGross + extraGross;
+
+    function getNetBreakdown(gross) {
+        const pension = gross * pensionPct;
+        const taxableGross = gross - pension - shareScheme;
+
+        // UK Tax Bands (Monthly)
+        const paMo = 12570 / 12;
+        const hrThreshMo = 50270 / 12;
+
+        let tax = 0;
+        if (taxableGross > hrThreshMo) {
+            tax = (hrThreshMo - paMo) * 0.20 + (taxableGross - hrThreshMo) * 0.40;
+        } else if (taxableGross > paMo) {
+            tax = (taxableGross - paMo) * 0.20;
+        }
+
+        // National Insurance Class 1 (Monthly)
+        let ni = 0;
+        if (taxableGross > hrThreshMo) {
+            ni = (hrThreshMo - paMo) * 0.08 + (taxableGross - hrThreshMo) * 0.02;
+        } else if (taxableGross > paMo) {
+            ni = (taxableGross - paMo) * 0.08;
+        }
+
+        // Student Loan
+        let slThresh = 0, slRate = 0;
+        if (studentLoan === 'plan1') { slThresh = 24990 / 12; slRate = 0.09; }
+        else if (studentLoan === 'plan2') { slThresh = 27295 / 12; slRate = 0.09; }
+        else if (studentLoan === 'plan5') { slThresh = 25000 / 12; slRate = 0.09; }
+        else if (studentLoan === 'postgrad') { slThresh = 21000 / 12; slRate = 0.06; }
+
+        let sl = 0;
+        if (slRate > 0 && taxableGross > slThresh) {
+            sl = (taxableGross - slThresh) * slRate;
+        }
+
+        const net = gross - pension - tax - ni - sl - shareScheme - unionFee;
+
+        return { gross, pension, tax, ni, sl, other: shareScheme + unionFee, net };
+    }
+
+    const base = getNetBreakdown(monthlyBaseGross);
+    const total = getNetBreakdown(monthlyTotalGross);
+
+    const fmt = num => '£' + num.toFixed(2);
+
+    document.getElementById('baseGross').innerText = fmt(base.gross);
+    document.getElementById('totalGross').innerText = fmt(total.gross);
+    document.getElementById('diffGross').innerText = fmt(total.gross - base.gross);
+
+    document.getElementById('basePension').innerText = fmt(base.pension);
+    document.getElementById('totalPension').innerText = fmt(total.pension);
+    document.getElementById('diffPension').innerText = fmt(total.pension - base.pension);
+
+    document.getElementById('baseTax').innerText = fmt(base.tax);
+    document.getElementById('totalTax').innerText = fmt(total.tax);
+    document.getElementById('diffTax').innerText = fmt(total.tax - base.tax);
+
+    document.getElementById('baseNI').innerText = fmt(base.ni);
+    document.getElementById('totalNI').innerText = fmt(total.ni);
+    document.getElementById('diffNI').innerText = fmt(total.ni - base.ni);
+
+    document.getElementById('baseSL').innerText = fmt(base.sl);
+    document.getElementById('totalSL').innerText = fmt(total.sl);
+    document.getElementById('diffSL').innerText = fmt(total.sl - base.sl);
+
+    document.getElementById('baseOther').innerText = fmt(base.other);
+    document.getElementById('totalOther').innerText = fmt(total.other);
+    document.getElementById('diffOther').innerText = fmt(0);
+
+    document.getElementById('baseNet').innerText = fmt(base.net);
+    document.getElementById('totalNet').innerText = fmt(total.net);
+    document.getElementById('diffNet').innerText = fmt(total.net - base.net);
+
+    document.getElementById('resultsBlock').style.display = 'block';
+}
+</script>
+</body>
+</html>
